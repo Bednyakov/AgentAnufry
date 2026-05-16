@@ -26,6 +26,10 @@ from tools.task_tools import (
     task_update_status, task_get_context, task_list_incomplete,
     task_search_similar
 )
+from tools.result_tools import (
+    result_save, result_get, result_list, result_get_latest,
+    result_delete, get_results_manager
+)
 from skills.loader import SkillLoader
 from tools.skills_runner import run_skill_script
 
@@ -325,6 +329,67 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "result_save",
+            "description": "КРИТИЧЕСКИ ВАЖНО: Сохраняет результат выполнения задачи для последующего использования. ВСЕГДА используй после получения важных данных (поиск, извлечение контента, списки компаний и т.д.).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "result_type": {"type": "string", "description": "Тип результата (search_results, extracted_data, companies_list, contacts, etc.)"},
+                    "content": {"type": "string", "description": "Содержимое результата в JSON формате"},
+                    "title": {"type": "string", "description": "Заголовок результата (например, 'Список транспортных компаний')"},
+                    "task_id": {"type": "integer", "description": "ID связанной задачи (опционально)"},
+                    "ttl_hours": {"type": "integer", "description": "Время жизни результата в часах", "default": 24}
+                },
+                "required": ["result_type", "content"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "result_get",
+            "description": "Получает сохранённый результат по ID. Используй когда нужно получить данные из предыдущих операций.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "result_id": {"type": "integer", "description": "ID результата"}
+                },
+                "required": ["result_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "result_list",
+            "description": "Показывает список сохранённых результатов текущей сессии. Используй чтобы увидеть доступные результаты.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "result_type": {"type": "string", "description": "Фильтр по типу результата (опционально)"},
+                    "limit": {"type": "integer", "description": "Максимальное количество результатов", "default": 10}
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "result_get_latest",
+            "description": "Получает последний сохранённый результат из сессии. Полезно когда пользователь просит использовать 'последние данные'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "result_type": {"type": "string", "description": "Фильтр по типу результата (опционально)"}
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "skill_get_info",
             "description": "Получает полную информацию о навыке (инструкции, примеры использования). Используй когда пользователь упоминает триггеры навыка.",
             "parameters": {
@@ -377,6 +442,10 @@ SYSTEM_PROMPT = f"""Ты — агент с полным доступом к ло
 - task_get_context — получает контекст задачи для продолжения
 - task_list_incomplete — показывает незавершённые задачи
 - task_search_similar — ищет похожие успешные решения
+- result_save — сохраняет результат для последующего использования (ОБЯЗАТЕЛЬНО используй!)
+- result_get — получает сохранённый результат по ID
+- result_list — показывает список сохранённых результатов
+- result_get_latest — получает последний сохранённый результат
 - skill_get_info — получает полную информацию о навыке
 - skill_run_script — выполняет специализированный скрипт из навыка
 
@@ -391,6 +460,23 @@ SYSTEM_PROMPT = f"""Ты — агент с полным доступом к ло
 - Сохраняй важные выводы через task_add_insight
 - Обновляй статус задачи при завершении
 - Если пользователь просит повторить — используй task_list_incomplete и task_get_context
+
+КРИТИЧЕСКИ ВАЖНО - Правила работы с результатами:
+- ВСЕГДА сохраняй результаты поиска и извлечения данных через result_save
+- После browser_search_google → сохрани результаты через result_save
+- После browser_extract_content → сохрани извлечённые данные через result_save
+- После формирования списков (компании, контакты и т.д.) → сохрани через result_save
+- Когда пользователь просит сохранить в файл — СНАЧАЛА проверь result_list или result_get_latest
+- НЕ ПОВТОРЯЙ поиск если данные уже есть в сохранённых результатах!
+- Пример правильной работы:
+  1. Пользователь: "Найди компании грузоперевозчиков"
+  2. Ты: browser_search_google → получаешь результаты
+  3. Ты: result_save(result_type="search_results", content=результаты, title="Поиск грузоперевозчиков")
+  4. Ты: browser_extract_content для каждого URL → получаешь данные
+  5. Ты: result_save(result_type="companies_list", content=список_компаний, title="Список транспортных компаний")
+  6. Пользователь: "Сохрани это в файл"
+  7. Ты: result_get_latest(result_type="companies_list") → получаешь сохранённые данные
+  8. Ты: write_file(path="companies.json", content=данные_из_результата)
 
 Правила работы с поиском в интернете (КРИТИЧЕСКИ ВАЖНО!):
 1. Для поиска информации ВСЕГДА используй browser_search_google (НЕ browser_navigate!)
@@ -496,6 +582,36 @@ async def execute_tool(name: str, arguments: Dict[str, Any], session_id: str = "
             arguments.get("args", []),
             arguments.get("timeout", 60)
         )
+    elif name == "result_save":
+        # Парсим content если это JSON строка
+        content = arguments["content"]
+        try:
+            import json
+            content = json.loads(content) if isinstance(content, str) else content
+        except:
+            pass
+        
+        return result_save(
+            session_id=session_id,
+            result_type=arguments["result_type"],
+            content=content,
+            title=arguments.get("title"),
+            task_id=arguments.get("task_id"),
+            ttl_hours=arguments.get("ttl_hours", 24)
+        )
+    elif name == "result_get":
+        return result_get(arguments["result_id"])
+    elif name == "result_list":
+        return result_list(
+            session_id=session_id,
+            result_type=arguments.get("result_type"),
+            limit=arguments.get("limit", 10)
+        )
+    elif name == "result_get_latest":
+        return result_get_latest(
+            session_id=session_id,
+            result_type=arguments.get("result_type")
+        )
     else:
         return {"error": f"Неизвестный инструмент: {name}"}
 
@@ -517,10 +633,16 @@ async def agent_loop(user_message: str, session_id: str) -> str:
     # Получаем релевантный контекст из памяти
     memory_context = await memory.build_context_prompt(user_message, session_id)
     
-    # Формируем system prompt с контекстом памяти
+    # Получаем контекст сохранённых результатов
+    results_manager = get_results_manager()
+    results_context = results_manager.build_results_context(session_id, limit=5)
+    
+    # Формируем system prompt с контекстом памяти и результатов
     system_prompt_with_memory = SYSTEM_PROMPT
     if memory_context:
         system_prompt_with_memory += f"\n\n{memory_context}"
+    if results_context:
+        system_prompt_with_memory += f"\n\n{results_context}"
     
     messages: List[Dict[str, Any]] = [
         {"role": "system", "content": system_prompt_with_memory},
