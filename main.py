@@ -14,7 +14,8 @@ from tools.shell import run_shell
 from tools.filesystem import read_file, write_file, list_dir, search_files
 from tools.browser import (
     browser_navigate, browser_click, browser_type, 
-    browser_get_text, browser_screenshot, browser_search_google, browser_close
+    browser_get_text, browser_screenshot, browser_search_google, 
+    browser_extract_content, browser_close
 )
 from tools.memory_tools import (
     memory_save_fact, memory_search, memory_get_summary, 
@@ -143,6 +144,21 @@ TOOLS = [
                     "query": {"type": "string", "description": "Поисковый запрос для Google"}
                 },
                 "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_extract_content",
+            "description": "Извлекает текстовый контент со страницы по URL. ОБЯЗАТЕЛЬНО используй после browser_search_google для получения детальной информации со страниц из результатов поиска.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL страницы для извлечения контента"},
+                    "selectors": {"type": "array", "items": {"type": "string"}, "description": "CSS селекторы для извлечения (опционально)", "default": None}
+                },
+                "required": ["url"]
             }
         }
     },
@@ -348,7 +364,8 @@ SYSTEM_PROMPT = f"""Ты — агент с полным доступом к ло
 - run_shell — выполняет любые терминальные команды
 - read_file / write_file / list_dir — работа с файлами
 - browser_navigate / browser_get_text — управление браузером
-- browser_search_google — поиск в Google с антидетект мерами (используй вместо browser_navigate для Google)
+- browser_search_google — поиск в Google с антидетект мерами
+- browser_extract_content — извлекает контент со страниц (ОБЯЗАТЕЛЬНО используй после поиска!)
 - memory_save_fact — сохраняет важную информацию в долговременную память
 - memory_search — ищет релевантную информацию из прошлых диалогов
 - memory_get_summary — показывает статистику памяти
@@ -374,6 +391,23 @@ SYSTEM_PROMPT = f"""Ты — агент с полным доступом к ло
 - Сохраняй важные выводы через task_add_insight
 - Обновляй статус задачи при завершении
 - Если пользователь просит повторить — используй task_list_incomplete и task_get_context
+
+Правила работы с поиском в интернете (КРИТИЧЕСКИ ВАЖНО!):
+1. Для поиска информации ВСЕГДА используй browser_search_google (НЕ browser_navigate!)
+2. После получения результатов поиска ОБЯЗАТЕЛЬНО используй browser_extract_content для каждого релевантного URL
+3. Алгоритм работы с поиском:
+   Шаг 1: browser_search_google("твой запрос") → получаешь список результатов с title, link, snippet
+   Шаг 2: browser_extract_content(url) для 3-5 наиболее релевантных ссылок → получаешь полный контент
+   Шаг 3: Анализируй полученный контент и формируй ответ пользователю
+4. ПРИМЕР правильной работы:
+   Задача: "Найди 5 компаний грузоперевозчиков"
+   - Вызываешь: browser_search_google("компании грузоперевозчики Россия")
+   - Получаешь 10 результатов с ссылками
+   - Вызываешь: browser_extract_content(url1), browser_extract_content(url2), browser_extract_content(url3)...
+   - Извлекаешь из контента названия компаний, контакты, услуги
+   - Формируешь список из 5 компаний с деталями
+5. НЕ ОСТАНАВЛИВАЙСЯ на результатах browser_search_google — они содержат только краткие описания!
+6. Используй browser_extract_content чтобы получить ПОЛНУЮ информацию со страниц
 
 Правила работы с навыками:
 - Когда пользователь упоминает триггер навыка — используй skill_get_info для получения инструкций
@@ -407,6 +441,8 @@ async def execute_tool(name: str, arguments: Dict[str, Any], session_id: str = "
         return await browser_get_text(arguments.get("selector", "body"))
     elif name == "browser_search_google":
         return await browser_search_google(arguments["query"])
+    elif name == "browser_extract_content":
+        return await browser_extract_content(arguments["url"], arguments.get("selectors"))
     elif name == "memory_save_fact":
         return await memory_save_fact(arguments["content"], arguments.get("category", "general"))
     elif name == "memory_search":

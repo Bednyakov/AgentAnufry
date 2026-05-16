@@ -147,30 +147,107 @@ async def browser_search_google(query: str) -> Dict[str, Any]:
             
             # Ждем загрузки результатов
             await page.wait_for_load_state("networkidle", timeout=15000)
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)  # Увеличена задержка для полной загрузки
             
-            # Извлекаем результаты поиска
+            # Извлекаем результаты поиска с множественными селекторами
             results = []
-            search_results = await page.query_selector_all('div.g, div[data-sokoban-container]')
             
+            # Пробуем разные селекторы для результатов поиска
+            selectors_to_try = [
+                'div.g',  # Классический селектор
+                'div[data-sokoban-container]',  # Альтернативный
+                'div.Gx5Zad',  # Новый формат
+                'div[jscontroller][lang]',  # Еще один вариант
+            ]
+            
+            search_results = []
+            for selector in selectors_to_try:
+                search_results = await page.query_selector_all(selector)
+                if search_results:
+                    break
+            
+            # Если не нашли результаты стандартными селекторами, пробуем найти все ссылки
+            if not search_results:
+                # Ищем все элементы с h3 (заголовки результатов)
+                h3_elements = await page.query_selector_all('h3')
+                for h3 in h3_elements:
+                    try:
+                        # Получаем родительский элемент с ссылкой
+                        parent = await h3.evaluate_handle('el => el.closest("a") || el.parentElement.closest("a")')
+                        if parent:
+                            search_results.append(await h3.evaluate_handle('el => el.closest("div")'))
+                    except:
+                        continue
+            
+            # Обрабатываем найденные результаты
             for result in search_results[:10]:  # Берем первые 10 результатов
                 try:
+                    # Пробуем разные способы извлечения заголовка
+                    title = ""
                     title_elem = await result.query_selector('h3')
-                    link_elem = await result.query_selector('a')
-                    snippet_elem = await result.query_selector('div[data-sncf], div.VwiC3b, span.aCOpRe')
-                    
-                    if title_elem and link_elem:
+                    if title_elem:
                         title = await title_elem.inner_text()
+                    
+                    if not title:
+                        continue
+                    
+                    # Извлекаем ссылку
+                    link = ""
+                    link_elem = await result.query_selector('a')
+                    if link_elem:
                         link = await link_elem.get_attribute('href')
-                        snippet = await snippet_elem.inner_text() if snippet_elem else ""
-                        
-                        results.append({
-                            "title": title,
-                            "link": link,
-                            "snippet": snippet
-                        })
-                except Exception:
+                    
+                    # Если ссылка не найдена, ищем в родительских элементах
+                    if not link:
+                        all_links = await result.query_selector_all('a')
+                        for a in all_links:
+                            href = await a.get_attribute('href')
+                            if href and href.startswith('http') and 'google.com' not in href:
+                                link = href
+                                break
+                    
+                    if not link or not link.startswith('http'):
+                        continue
+                    
+                    # Извлекаем описание (snippet)
+                    snippet = ""
+                    snippet_selectors = [
+                        'div[data-sncf]',
+                        'div.VwiC3b',
+                        'span.aCOpRe',
+                        'div[style*="line-height"]',
+                        'div.s',
+                        'span.st'
+                    ]
+                    
+                    for sel in snippet_selectors:
+                        snippet_elem = await result.query_selector(sel)
+                        if snippet_elem:
+                            snippet = await snippet_elem.inner_text()
+                            if snippet:
+                                break
+                    
+                    # Добавляем результат
+                    results.append({
+                        "title": title.strip(),
+                        "link": link,
+                        "snippet": snippet.strip()
+                    })
+                    
+                except Exception as e:
+                    # Игнорируем ошибки для отдельных результатов
                     continue
+            
+            # Если результатов все еще нет, делаем скриншот для отладки
+            if not results:
+                try:
+                    await page.screenshot(path="debug_search_results.png")
+                    page_content = await page.content()
+                    # Сохраняем HTML для анализа
+                    with open("debug_search_page.html", "w", encoding="utf-8") as f:
+                        f.write(page_content)
+                except:
+                    pass
             
             return {
                 "success": True,
@@ -183,6 +260,60 @@ async def browser_search_google(query: str) -> Dict[str, Any]:
             
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+async def browser_extract_content(url: str, selectors: list = None) -> Dict[str, Any]:
+    """
+    Извлекает текстовый контент со страницы по URL.
+    Полезно для извлечения информации из результатов поиска.
+    
+    Args:
+        url: URL страницы для извлечения контента
+        selectors: Список CSS селекторов для извлечения (по умолчанию извлекает основной контент)
+    
+    Returns:
+        Dict с успехом, URL, заголовком и извлеченным текстом
+    """
+    page = await _ensure_browser()
+    try:
+        await page.goto(url, wait_until="networkidle", timeout=30000)
+        await asyncio.sleep(1)
+        
+        title = await page.title()
+        
+        # Если селекторы не указаны, используем стандартные для основного контента
+        if not selectors:
+            selectors = [
+                'article', 'main', '[role="main"]', 
+                '.content', '#content', '.main-content',
+                'body'
+            ]
+        
+        extracted_text = ""
+        for selector in selectors:
+            try:
+                element = await page.query_selector(selector)
+                if element:
+                    text = await element.inner_text()
+                    if text and len(text) > 100:  # Берем первый значимый контент
+                        extracted_text = text[:3000]  # Лимит для контекста
+                        break
+            except Exception:
+                continue
+        
+        # Если ничего не нашли, берем весь body
+        if not extracted_text:
+            extracted_text = await page.inner_text('body')
+            extracted_text = extracted_text[:3000]
+        
+        return {
+            "success": True,
+            "url": url,
+            "title": title,
+            "content": extracted_text,
+            "content_length": len(extracted_text)
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e), "url": url}
 
 async def browser_close() -> Dict[str, Any]:
     """Закрывает браузер."""
