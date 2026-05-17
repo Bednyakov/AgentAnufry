@@ -33,10 +33,10 @@ AgentAnufry/
 │   ├── RESULTS_SYSTEM.md         # Система сохранения результатов
 │   ├── SKILLS_ARCHITECTURE.md    # Архитектура навыков
 │   └── GOOGLE_SEARCH_FIX.md      # Исправления поиска
-├──  llm/
+├── llm/
 │   ├── factory.py                # Фабрика для создания LLM провайдеров
 │   └── provider.py               # Базовый класс для LLM провайдеров
-└── llm/
+└── ...
 ```
 _____
 
