@@ -4,8 +4,22 @@ from pathlib import Path
 from typing import Dict, Any, List
 from config import WORKSPACE_DIR
 
+def _normalize_path(path: str) -> str:
+    """Нормализует путь, удаляя дублирующийся префикс workspace."""
+    # Удаляем возможные префиксы, которые дублируют WORKSPACE_DIR
+    workspace_name = os.path.basename(WORKSPACE_DIR)
+    
+    # Если путь начинается с имени рабочей директории, удаляем его
+    if path.startswith(workspace_name + '/') or path.startswith(workspace_name + os.sep):
+        path = path[len(workspace_name) + 1:]
+    elif path == workspace_name:
+        path = '.'
+    
+    return path
+
 def read_file(path: str, offset: int = 0, limit: int = 100) -> Dict[str, Any]:
     """Читает файл из рабочей директории."""
+    path = _normalize_path(path)
     full_path = Path(WORKSPACE_DIR) / path
     full_path = full_path.resolve()
     
@@ -32,6 +46,7 @@ def read_file(path: str, offset: int = 0, limit: int = 100) -> Dict[str, Any]:
 
 def write_file(path: str, content: str, append: bool = False) -> Dict[str, Any]:
     """Записывает или дописывает файл."""
+    path = _normalize_path(path)
     full_path = Path(WORKSPACE_DIR) / path
     full_path = full_path.resolve()
     
@@ -49,6 +64,7 @@ def write_file(path: str, content: str, append: bool = False) -> Dict[str, Any]:
 
 def list_dir(path: str = ".") -> Dict[str, Any]:
     """Список файлов в директории."""
+    path = _normalize_path(path)
     full_path = Path(WORKSPACE_DIR) / path
     full_path = full_path.resolve()
     
@@ -72,6 +88,7 @@ def list_dir(path: str = ".") -> Dict[str, Any]:
 def search_files(pattern: str, path: str = ".") -> Dict[str, Any]:
     """Поиск файлов по паттерну (grep-like)."""
     import subprocess
+    path = _normalize_path(path)
     full_path = Path(WORKSPACE_DIR) / path
     result = subprocess.run(
         ["grep", "-r", "-l", pattern, str(full_path)],
