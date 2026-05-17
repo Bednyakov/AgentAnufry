@@ -1,6 +1,5 @@
-# AgentAnufry
-Российский агент Ануфрий на Python, с открытым исходным кодом. 
-Работает с файлами, браузером, имеет долговременную память, трекер задач, встроенные и расширяемые навыки.
+# AgentAnufry — Open Source AI Agent Framework на Python
+Автономный AI-агент на Python с долговременной памятью, browser automation, task tracking и системой навыков.
 
 ```
 AgentAnufry/
@@ -157,3 +156,53 @@ __
 
 🤖 Агент: MongoDB Shell установлен. Подключение к localhost:27017 успешно — сервер отвечает { ok: 1 }.
 ```
+
+_____
+## SEO
+
+---
+
+# AI Agent Framework на Python — Open Source Multi-Agent Assistant
+
+**AgentAnufry** — open source AI agent framework на Python для создания автономных LLM-агентов с долговременной памятью, системой навыков, трекером задач и управлением браузером через CDP/Playwright.
+
+Проект подходит для:
+- разработки AI-агентов на Python
+- создания autonomous agents
+- LLM orchestration
+- AI assistants
+- browser automation
+- agentic workflows
+- memory-driven AI systems
+- AI task automation
+- local AI agents
+- multi-tool AI systems
+
+### Ключевые возможности
+
+- 🧠 Long-term memory для AI-агента
+- 🌐 Browser automation через Chrome DevTools Protocol
+- 🛠 Расширяемая skill-based architecture
+- 📂 Работа с файлами и shell-командами
+- 📋 Task tracking и сохранение промежуточных результатов
+- 🔍 Семантический поиск через embeddings
+- 💾 SQLite persistence layer
+- ⚡ Lightweight Python AI agent framework
+- 🔌 Простое расширение через Python-модули
+
+### SEO Keywords
+
+AI agent Python, autonomous AI agent, Python AI framework, open source AI agent, LLM agent framework, browser AI agent, multi-agent system Python, AI assistant Python, long-term memory AI, AI automation framework, agentic AI, local AI agent, AI orchestration, Playwright AI automation, Chrome DevTools Protocol AI, semantic memory AI, GPT agent Python, modular AI agent architecture, AI tools framework, task-oriented AI system.
+
+### Подходит для
+
+- AI engineering
+- backend developers
+- AI research experiments
+- automation engineers
+- LLM enthusiasts
+- self-hosted AI solutions
+- experimental AI systems
+- agent-based architectures
+
+---
