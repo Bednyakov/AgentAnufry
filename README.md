@@ -1,5 +1,6 @@
 # AgentAnufry — Open Source AI Agent Framework на Python
-Автономный AI-агент Ануфрий на Python с долговременной памятью, browser automation, task tracking и системой навыков.
+Автономный AI-агент Ануфрий на Python с долговременной памятью, автоматизацией браузера через CDP/Playwright, трекером задач, и системой навыков.
+
 
 ```
 AgentAnufry/
