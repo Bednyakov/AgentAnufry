@@ -33,7 +33,9 @@ AgentAnufry/
 │   ├── TASK_TRACKING.md          # Документация трекера задач
 │   ├── RESULTS_SYSTEM.md         # Система сохранения результатов
 │   ├── SKILLS_ARCHITECTURE.md    # Архитектура навыков
-│   └── GOOGLE_SEARCH_FIX.md      # Исправления поиска
+│   ├── GOOGLE_SEARCH_FIX.md      # Исправления поиска
+│   ├── LOCAL_LLM_GUIDE.md        # Настройка локальных LLM
+│   └── YANDEX_CLOUD_SETUP.md     # Настройка Yandex Cloud
 ├── llm/
 │   ├── factory.py          # Фабрика для создания LLM провайдеров
 │   └── provider.py         # Базовый класс для LLM провайдеров
@@ -61,6 +63,12 @@ playwright install chromium
     # Для локальной Ollama
     LLM_PROVIDER=ollama
     LLM_MODEL=llama3.2
+    
+    # Для Yandex Cloud
+    LLM_PROVIDER=openai
+    LLM_API_KEY=your_yandex_api_key
+    LLM_BASE_URL=https://ai.api.cloud.yandex.net/v1
+    LLM_MODEL=gpt://folder_id/model_name/latest
     ```
     - например, я ограничился таким .env:
     ```
@@ -69,7 +77,7 @@ playwright install chromium
     LLM_BASE_URL=https://openrouter.ai/api/v1
     LLM_MODEL=gpt-5
     ```
-- подробнее см. [LOCAL_LLM_GUIDE.md](docs/LOCAL_LLM_GUIDE.md)
+- подробнее см. [LOCAL_LLM_GUIDE.md](docs/LOCAL_LLM_GUIDE.md) и [YANDEX_CLOUD_SETUP.md](docs/YANDEX_CLOUD_SETUP.md)
 
 ## 3. Запуск
 python main.py

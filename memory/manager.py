@@ -12,7 +12,10 @@ from pathlib import Path
 import numpy as np
 from openai import AsyncOpenAI
 
-from config import LLM_API_KEY, LLM_BASE_URL
+from config import (
+    EMBEDDINGS_PROVIDER, EMBEDDINGS_MODEL, EMBEDDINGS_BASE_URL, EMBEDDINGS_API_KEY,
+    IMPORTANCE_CLASSIFIER_MODEL, LLM_MODEL, LLM_BASE_URL, LLM_API_KEY
+)
 
 
 class MemoryManager:
@@ -27,7 +30,22 @@ class MemoryManager:
     def __init__(self, db_path: str = "memory/agent_memory.db"):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.client = AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+        
+        # Клиент для embeddings
+        self.embeddings_client = AsyncOpenAI(
+            api_key=EMBEDDINGS_API_KEY,
+            base_url=EMBEDDINGS_BASE_URL
+        )
+        self.embeddings_model = EMBEDDINGS_MODEL
+        self.embeddings_provider = EMBEDDINGS_PROVIDER
+        
+        # Клиент для классификации важности
+        self.llm_client = AsyncOpenAI(
+            api_key=LLM_API_KEY,
+            base_url=LLM_BASE_URL
+        )
+        self.classifier_model = IMPORTANCE_CLASSIFIER_MODEL
+        
         self._init_db()
     
     def _init_db(self):
@@ -88,15 +106,28 @@ class MemoryManager:
         conn.close()
     
     async def _get_embedding(self, text: str) -> List[float]:
-        """Получает embedding для текста через OpenAI API."""
+        """Получает embedding для текста через API."""
         try:
-            response = await self.client.embeddings.create(
-                model="text-embedding-3-small",
-                input=text
+            # Для Yandex Cloud и других провайдеров, которые не поддерживают embeddings,
+            # отключаем их использование
+            if self.embeddings_provider == "openai" and "yandex" in self.embeddings_client.base_url.lower():
+                # Yandex Cloud не поддерживает embeddings API
+                return []
+            
+            if self.embeddings_provider == "local":
+                # TODO: Реализовать локальные embeddings через sentence-transformers
+                print("⚠️ Локальные embeddings пока не реализованы, используется заглушка")
+                return []
+            
+            response = await self.embeddings_client.embeddings.create(
+                model=self.embeddings_model,
+                input=text,
+                encoding_format="float"  # Явно указываем формат
             )
             return response.data[0].embedding
         except Exception as e:
-            print(f"⚠️ Ошибка получения embedding: {e}")
+            # Если embeddings не поддерживаются, возвращаем пустой список
+            # Это отключит семантический поиск, но не сломает работу агента
             return []
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
@@ -127,14 +158,20 @@ class MemoryManager:
 
 Ответь ТОЛЬКО числом от 1 до 10."""
 
-            response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
+            response = await self.llm_client.chat.completions.create(
+                model=self.classifier_model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
                 max_tokens=10
             )
             
-            importance_str = response.choices[0].message.content.strip()
+            # Проверяем, что content не None
+            content = response.choices[0].message.content
+            if content is None:
+                print("⚠️ LLM вернул пустой ответ при классификации важности")
+                return 5  # По умолчанию средняя важность
+            
+            importance_str = content.strip()
             importance = int(''.join(filter(str.isdigit, importance_str)))
             return max(1, min(10, importance))
         except Exception as e:

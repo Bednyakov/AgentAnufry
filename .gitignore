@@ -25,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.old_db
 memory/agent_memory.db
 
 # PyInstaller

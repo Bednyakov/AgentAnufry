@@ -28,12 +28,16 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "4096"))
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "300"))  # секунды
 
 # Embeddings конфигурация (для памяти агента)
-EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER", "openai")  # openai или local
+EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER", LLM_PROVIDER)  # По умолчанию используем тот же провайдер что и для LLM
 EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "text-embedding-3-small")
-EMBEDDINGS_BASE_URL = os.getenv("EMBEDDINGS_BASE_URL", "https://api.openai.com/v1")
+EMBEDDINGS_BASE_URL = os.getenv("EMBEDDINGS_BASE_URL", LLM_BASE_URL)  # По умолчанию используем тот же URL
+EMBEDDINGS_API_KEY = os.getenv("EMBEDDINGS_API_KEY", LLM_API_KEY)  # По умолчанию используем тот же ключ
 
 # Локальные embeddings (если EMBEDDINGS_PROVIDER = "local")
 LOCAL_EMBEDDINGS_MODEL = os.getenv("LOCAL_EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+
+# Модель для классификации важности (используется в памяти)
+IMPORTANCE_CLASSIFIER_MODEL = os.getenv("IMPORTANCE_CLASSIFIER_MODEL", LLM_MODEL)  # По умолчанию используем основную модель
 
 # ============================================
 # Предустановленные конфигурации провайдеров
