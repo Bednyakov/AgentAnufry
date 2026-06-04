@@ -121,7 +121,7 @@ _____
 
 Добавлена возможность подключать **embeddings** для семантического поиска в памяти агента отдельно от основной модели агента.
 
-**Подробнее:** см. [EMBEDDINGS_TROUBLESHOOTING.md](docs/EMBEDDINGS_TROUBLESHOOTING)
+**Подробнее:** см. [EMBEDDINGS_TROUBLESHOOTING.md](docs/EMBEDDINGS_TROUBLESHOOTING.md)
 _____
 Добавлена поддержка **локальных LLM**:
 
