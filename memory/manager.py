@@ -128,6 +128,7 @@ class MemoryManager:
         except Exception as e:
             # Если embeddings не поддерживаются, возвращаем пустой список
             # Это отключит семантический поиск, но не сломает работу агента
+            print(f"⚠️ Ошибка получения embedding (модель: {self.embeddings_model}, провайдер: {self.embeddings_provider}): {e}")
             return []
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:

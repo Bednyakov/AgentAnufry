@@ -70,13 +70,47 @@ playwright install chromium
     LLM_BASE_URL=https://ai.api.cloud.yandex.net/v1
     LLM_MODEL=gpt://folder_id/model_name/latest
     ```
-    - например, я ограничился таким .env:
+    Важно, не все модели поддерживают embeddings, см. [EMBEDDINGS_TROUBLESHOOTING.md](docs/EMBEDDINGS_TROUBLESHOOTING) 
+
+    - например, при работае с API Openrouter я ограничился таким .env:
     ```
     LLM_PROVIDER=openrouter
     LLM_API_KEY=sk-or-v1-...
     LLM_BASE_URL=https://openrouter.ai/api/v1
     LLM_MODEL=gpt-5
     ```
+    А вот для работы с API Yandex Cloud пришлось разделить логику:
+    - основная модель от YC
+    - embeddings на Openrouter:
+    ```
+    # ============================================
+    # Yandex Cloud Configuration
+    # ============================================
+    LLM_PROVIDER=openai
+    LLM_API_KEY=AQVNxNKvWkpvFetiuyehweiurwe
+    LLM_BASE_URL=https://ai.api.cloud.yandex.net/v1
+    LLM_MODEL=gpt://b1gpesajkrdn6fsfnhqq/deepseek-v4-flash/latest # отличная моделька для агента
+
+    # ============================================
+    # Embeddings Configuration
+    # ============================================
+    EMBEDDINGS_PROVIDER=openrouter
+    EMBEDDINGS_MODEL=text-embedding-3-small
+    EMBEDDINGS_BASE_URL=https://openrouter.ai/api/v1
+    EMBEDDINGS_API_KEY=sk-......................
+
+    # ============================================
+    # Дополнительные параметры
+    # ============================================
+    LLM_TEMPERATURE=0.1
+    LLM_MAX_TOKENS=4096
+    LLM_TIMEOUT=300
+    MAX_ITERATIONS=20
+    ```
+    Но даже если вы оставите только API Yandex Cloud, который не поддерживает embeddings API,
+    ничего не сломается, embeddings будут автоматически отключены для.
+    Семантический поиск в памяти агента будет недоступен, но агент продолжит работать.
+
 - подробнее см. [LOCAL_LLM_GUIDE.md](docs/LOCAL_LLM_GUIDE.md) и [YANDEX_CLOUD_SETUP.md](docs/YANDEX_CLOUD_SETUP.md)
 
 ## 3. Запуск
@@ -85,6 +119,10 @@ _____
 
 ## ✨ Новое:
 
+Добавлена возможность подключать **embeddings** для семантического поиска в памяти агента отдельно от основной модели агента.
+
+**Подробнее:** см. [EMBEDDINGS_TROUBLESHOOTING.md](docs/EMBEDDINGS_TROUBLESHOOTING)
+_____
 Добавлена поддержка **локальных LLM**:
 
 Агент теперь может работать с локальными языковыми моделями через OpenAI-совместимый API. Поддерживаются:
