@@ -124,5 +124,11 @@ def get_provider_config():
 # Security & System Configuration
 # ============================================
 ALLOWED_COMMANDS = os.getenv("ALLOWED_COMMANDS", "*")  # "*" = все, или список через запятую
-WORKSPACE_DIR = os.path.expanduser("~/agent-workspace")
+
+# Кроссплатформенная рабочая директория
+# Использует переменную окружения или создаёт в домашней директории пользователя
+WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.expanduser("~/agent-workspace"))
+# Нормализуем путь для текущей ОС
+WORKSPACE_DIR = os.path.normpath(WORKSPACE_DIR)
+
 MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "20"))

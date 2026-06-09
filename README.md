@@ -51,6 +51,7 @@ AgentAnufry/
 │   ├── TASK_TRACKING.md          # Документация трекера задач
 │   ├── RESULTS_SYSTEM.md         # Система сохранения результатов
 │   ├── SKILLS_ARCHITECTURE.md    # Архитектура навыков
+│   ├── CROSS_PLATFORM_SUPPORT.md # Кроссплатформенная поддержка
 │   ├── GOOGLE_SEARCH_FIX.md      # Исправления поиска
 │   ├── LOCAL_LLM_GUIDE.md        # Настройка локальных LLM
 │   └── YANDEX_CLOUD_SETUP.md     # Настройка Yandex Cloud
@@ -136,6 +137,13 @@ python main.py
 _____
 
 ## ✨ Новое:
+
+**Кроссплатформенная поддержка**: Агент теперь работает на **Linux, macOS и Windows**! 
+
+Система автоматически определяет операционную систему и использует соответствующий shell (bash для Linux/macOS, cmd для Windows). Все опасные команды блокируются для каждой ОС отдельно.
+
+**Подробнее:** см. [CROSS_PLATFORM_SUPPORT.md](docs/CROSS_PLATFORM_SUPPORT.md)
+_____
 
 **Гайд** по запуску агента автономно, на локальной модели с LM studio см. [Guide_launching_agent_with_LM_studio.md](docs/Guide_launching_agent_with_LM_studio.md)
 _____

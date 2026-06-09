@@ -64,7 +64,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "run_shell",
-            "description": "Выполняет shell-команду на локальной Linux-машине. Используй для: установки пакетов, запуска скриптов, работы с git, mongosh, docker и любых системных операций.",
+            "description": "Выполняет shell-команду на локальной машине (Linux/macOS/Windows). Автоматически определяет ОС и использует соответствующий shell (bash для Linux/macOS, cmd для Windows). Используй для: установки пакетов, запуска скриптов, работы с git, mongosh, docker и любых системных операций.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -457,10 +457,10 @@ TOOLS = [
 # Получаем каталог навыков для system prompt
 SKILLS_CATALOG = skill_loader.get_catalog_prompt()
 
-SYSTEM_PROMPT = f"""Ты — агент с полным доступом к локальной Linux-системе и долговременной памятью.
+SYSTEM_PROMPT = f"""Ты — агент с полным доступом к локальной системе (Linux/macOS/Windows) и долговременной памятью.
 
 У тебя есть инструменты:
-- run_shell — выполняет любые терминальные команды
+- run_shell — выполняет любые терминальные команды (автоматически определяет ОС и использует соответствующий shell)
 - read_file / write_file / list_dir — работа с файлами
 - browser_navigate / browser_get_text — управление браузером
 - browser_search_google — поиск в Google с антидетект мерами
