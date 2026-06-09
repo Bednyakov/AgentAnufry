@@ -163,7 +163,7 @@ class MemoryManager:
                 model=self.classifier_model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=10
+                max_tokens=50
             )
             
             # Проверяем, что content не None
@@ -173,6 +173,8 @@ class MemoryManager:
                 return 5  # По умолчанию средняя важность
             
             importance_str = content.strip()
+            if not importance_str or not any(c.isdigit() for c in importance_str):
+                return 5  # Если нет цифр - возвращаем дефолт
             importance = int(''.join(filter(str.isdigit, importance_str)))
             return max(1, min(10, importance))
         except Exception as e:

@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 .old_db
 memory/agent_memory.db
+old_files
 
 # PyInstaller
 #   Usually these files are written by a python script from a template
