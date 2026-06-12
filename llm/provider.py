@@ -99,7 +99,7 @@ class OpenAIProvider(LLMProvider):
 
 
 class OpenRouterProvider(LLMProvider):
-    """Провайдер для OpenRouter API."""
+    """Провайдер для OpenRouter API (с поддержкой prompt caching)."""
     
     def __init__(self, api_key: str, base_url: str, model: str, **kwargs):
         super().__init__(
@@ -108,6 +108,16 @@ class OpenRouterProvider(LLMProvider):
             model=model,
             supports_functions=True,
             **kwargs
+        )
+        # Enable prompt caching for OpenRouter
+        self.client = AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=self.timeout,
+            default_headers={
+                "HTTP-Referer": "https://github.com/AgentAnufry",
+                "X-Title": "AgentAnufry",
+            }
         )
 
 
