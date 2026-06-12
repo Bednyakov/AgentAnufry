@@ -192,14 +192,16 @@ async def dispatch_tool_use(category: str, action: str, params: Dict[str, Any], 
 
     elif category == "skill":
         if action == "get_info":
-            skill = skill_loader.load_full(params["skill_name"])
+            skill_name = params.get("skill_name") or params.get("name")
+            skill = skill_loader.load_full(skill_name)
             if skill:
                 return {"success": True, "name": skill.name, "description": skill.description,
                         "content": skill.content, "triggers": skill.triggers}
-            return {"success": False, "error": f"Навык '{params['skill_name']}' не найден"}
+            return {"success": False, "error": f"Навык '{skill_name}' не найден"}
         elif action == "run_script":
+            skill_name = params.get("skill_name") or params.get("name")
             return run_skill_script(
-                skill_loader, params["skill_name"], params["script_name"],
+                skill_loader, skill_name, params["script_name"],
                 params.get("args", []), params.get("timeout", 60)
             )
         else:
